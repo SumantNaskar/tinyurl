@@ -1,0 +1,53 @@
+services:
+
+  app:
+    build: .
+
+    container_name: urlshortner-api
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres/urlshortner
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379/0
+
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:15
+
+    container_name: urlshortner-postgres
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: urlshortner
+
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+
+    container_name: urlshortner-redis
+
+    ports:
+      - "6379:6379"
+  
+  worker:
+    build: .
+
+    command: python -m celery -A app.tasks worker --pool=solo --loglevel=info
+
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres/urlshortner
+      REDIS_URL: redis://redis:6379/0
+
+    depends_on:
+      - postgres
+      - redis
