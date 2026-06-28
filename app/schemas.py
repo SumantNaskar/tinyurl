@@ -19,4 +19,7 @@ class StatsResponse(BaseModel):
     long_url: str
     click_count: int
     created_at: datetime
+    expires_at: datetime
+    is_active: bool
+    
     

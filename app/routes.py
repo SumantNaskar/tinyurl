@@ -78,3 +78,19 @@ def redirect_url(short_code:str, db: Session = Depends(get_db)):
     increment_click_count.delay(short_code)
 
     return RedirectResponse(url=long_url, status_code=302)
+
+@router.get("/api/v1/{short_code}/stats")
+def get_stats(short_code: str, db: Session = Depends(get_db)):
+    url_record = db.query(URL).filter(URL.short_code).first()
+
+    if not url_record:
+        raise HTTPException(status_code=404, detail="Short url not found")
+    
+    return StatsResponse(
+        short_code=url_record.short_code,
+        long_url=url_record.long_url,
+        click_count=url_record.click_count,
+        created_at=url_record.created_at,
+        expires_at=url_record.expires_at,
+        is_active=url_record.is_active
+    )
