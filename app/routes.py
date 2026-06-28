@@ -81,7 +81,7 @@ def redirect_url(short_code:str, db: Session = Depends(get_db)):
 
 @router.get("/api/v1/{short_code}/stats")
 def get_stats(short_code: str, db: Session = Depends(get_db)):
-    url_record = db.query(URL).filter(URL.short_code).first()
+    url_record = db.query(URL).filter(URL.short_code==short_code).first()
 
     if not url_record:
         raise HTTPException(status_code=404, detail="Short url not found")
