@@ -1,5 +1,5 @@
-from fastapi import APIRouter, FastAPI, Depends, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, FastAPI, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta, timezone
@@ -10,6 +10,7 @@ from app.schemas import ShortenRequest, ShortenResponse, StatsResponse
 from app.idgen import generate_short_code
 from app.cache import get_cached_url, cache_url, invalidate_url
 from app.tasks import increment_click_count
+from app.qr import get_or_create_qr
 
 router = APIRouter()
 
@@ -94,3 +95,18 @@ def get_stats(short_code: str, db: Session = Depends(get_db)):
         expires_at=url_record.expires_at,
         is_active=url_record.is_active
     )
+
+@router.get("/{short_code}/qr")
+def get_qr_code(short_code:str, request:Request, db: Session=Depends(get_db)):
+
+    url_record = db.query(URL).filter(URL.short_code == short_code).first()
+
+    if not url_record:
+        raise HTTPException(status_code=404, detail="Short code not found")
+    
+    short_url = f"{request.base_url}{short_code}"
+
+    image_bytes = get_or_create_qr(short_code, short_url)
+
+    return Response(content=image_bytes, media_type="image/png")
+
